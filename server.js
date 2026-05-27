@@ -1,4 +1,5 @@
 var http = require('http');
+
 var myCoin = {
     "name": "HashLatch",
     "symbol": "HLC",
@@ -7,40 +8,36 @@ var myCoin = {
     "peerMagicTestnet": "50574858"
 };
 
-// Wait for node RPC to be ready before starting stratum
-function waitForNode(callback) {
+function rpcCall(method, params, callback) {
+    var body = JSON.stringify({jsonrpc:'1.0', id:'check', method:method, params:params||[]});
     var options = {
-        hostname: '127.0.0.1',
-        port: 8766,
-        path: '/',
-        method: 'POST',
+        hostname: '127.0.0.1', port: 8766, path: '/', method: 'POST',
         auth: 'hashlatch:test123',
-        headers: {'Content-Type': 'application/json'}
+        headers: {'Content-Type':'application/json', 'Content-Length': Buffer.byteLength(body)}
     };
-    var body = JSON.stringify({jsonrpc:'1.0',method:'getblockcount',params:[]});
     var req = http.request(options, function(res) {
         var data = '';
-        res.on('data', function(d) { data += d; });
-        res.on('end', function() {
-            try {
-                var result = JSON.parse(data);
-                if (result.result !== null && result.result !== undefined) {
-                    console.log('Node ready at block ' + result.result);
-                    callback();
-                } else {
-                    setTimeout(function() { waitForNode(callback); }, 3000);
-                }
-            } catch(e) {
-                setTimeout(function() { waitForNode(callback); }, 3000);
-            }
+        res.on('data', function(d){ data += d; });
+        res.on('end', function(){
+            try { callback(null, JSON.parse(data)); }
+            catch(e) { callback(e); }
         });
     });
-    req.on('error', function() {
-        console.log('Waiting for node RPC...');
-        setTimeout(function() { waitForNode(callback); }, 3000);
-    });
+    req.on('error', callback);
     req.write(body);
     req.end();
+}
+
+function waitForNode(callback) {
+    rpcCall('getblockcount', [], function(err, result) {
+        if (!err && result && result.result !== null && result.result !== undefined) {
+            console.log('[node] Ready at block ' + result.result);
+            callback();
+        } else {
+            console.log('[node] Not ready, retrying in 5s...');
+            setTimeout(function(){ waitForNode(callback); }, 5000);
+        }
+    });
 }
 
 function startStratum() {
@@ -55,38 +52,20 @@ function startStratum() {
         "jobRebroadcastTimeout": 55,
         "connectionTimeout": 1200,
         "tcpProxyProtocol": false,
-        "banning": {
-            "enabled": false
-        },
+        "banning": {"enabled": false},
         "ports": {
             "3052": {
                 "diff": 0.001,
                 "varDiff": {
-                    "minDiff": 0.0001,
-                    "maxDiff": 1,
-                    "targetTime": 15,
-                    "retargetTime": 60,
-                    "variancePercent": 30
+                    "minDiff": 0.0001, "maxDiff": 1,
+                    "targetTime": 15, "retargetTime": 60, "variancePercent": 30
                 }
             }
         },
-        "daemons": [
-            {
-                "host": "127.0.0.1",
-                "port": 8766,
-                "user": "hashlatch",
-                "password": "test123"
-            }
-        ],
-        "p2p": {
-            "enabled": false
-        }
+        "daemons": [{"host":"127.0.0.1","port":8766,"user":"hashlatch","password":"test123"}],
+        "p2p": {"enabled": false}
     }, function(ip, port, workerName, password, extraNonce1, version, callback) {
-        callback({
-            error: null,
-            authorized: true,
-            disconnect: false
-        });
+        callback({error: null, authorized: true, disconnect: false});
     });
 
     pool.on('share', function(isValidShare, isValidBlock, data) {
@@ -103,5 +82,5 @@ function startStratum() {
     console.log('HashLatch KawPow Stratum started on port 3052');
 }
 
-console.log('Waiting for node to be ready...');
+console.log('[node] Waiting for RPC...');
 waitForNode(startStratum);
