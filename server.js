@@ -12,7 +12,7 @@ function waitForNode(callback) {
     var body = JSON.stringify({jsonrpc:"1.0",id:"check",method:"getblockcount",params:[]});
     var options = {
         hostname:"127.0.0.1", port:8766, path:"/", method:"POST",
-        auth:"hashlatch:test123",
+        auth:"hashlatch:YOUR_RPC_PASSWORD",
         headers:{"Content-Type":"application/json","Content-Length":Buffer.byteLength(body)}
     };
     var req = http.request(options, function(res) {
@@ -44,7 +44,7 @@ function startStratum() {
     var pool = Stratum.createPool({
         "coin": myCoin,
         "address": "co8z5Qfgdo86XyEFeS2DnQEsUxQcKjnTFG",
-        "rewardRecipients": {"cRYRACPgomBGC198N31GTbaHqp85bQV5b3": 2},
+        "rewardRecipients": {"YOUR_DEV_ADDRESS": 2},
         "kawpow_validator": "kawpowd",
         "kawpow_wrapper_host": "127.0.0.1",
         "kawpow_wrapper_port": 9999,
@@ -66,7 +66,7 @@ function startStratum() {
                 }
             }
         },
-        "daemons": [{"host":"127.0.0.1","port":8766,"user":"hashlatch","password":"test123"}],
+        "daemons": [{"host":"127.0.0.1","port":8766,"user":"YOUR_RPC_USER","password":"YOUR_RPC_PASSWORD"}],
         "p2p": {"enabled": false}
     }, function(ip, port, workerName, password, extraNonce1, version, callback) {
         callback({error: null, authorized: true, disconnect: false});
