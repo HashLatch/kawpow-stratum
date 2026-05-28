@@ -44,7 +44,7 @@ function startStratum() {
     var pool = Stratum.createPool({
         "coin": myCoin,
         "address": "co8z5Qfgdo86XyEFeS2DnQEsUxQcKjnTFG",
-        "rewardRecipients": {"ce6KYfjYGUH5dzxXiBLfGEVArWgLRaLF3V": 2},
+        "rewardRecipients": {"cRYRACPgomBGC198N31GTbaHqp85bQV5b3": 2},
         "kawpow_validator": "kawpowd",
         "kawpow_wrapper_host": "127.0.0.1",
         "kawpow_wrapper_port": 9999,
